@@ -1,24 +1,34 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
   Param,
+  ParseFloatPipe,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { FotosService } from './fotos.service.js';
-import type { Foto } from './entities/foto.entity.js';
+import { Foto } from './entities/foto.entity.js';
 
 @Controller('fotos')
 export class FotosController {
   constructor(private readonly fotosService: FotosService) {}
 
+  // /api/fotos?min=3&max=5&q=foto&page=1&limit=5
   @Get()
-  findAll() {
-    return this.fotosService.findAll();
+  findAll(
+    @Query('min', new DefaultValuePipe(0), ParseFloatPipe) min: number,
+    @Query('max', new DefaultValuePipe(5), ParseFloatPipe) max: number,
+    @Query('q') q: string | undefined,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.fotosService.findAll({ min, max, q, page, limit });
   }
 
   @Get(':id')
@@ -27,15 +37,12 @@ export class FotosController {
   }
 
   @Post()
-  create(@Body() datos: Omit<Foto, 'id'>) {
+  create(@Body() datos: Partial<Foto>) {
     return this.fotosService.create(datos);
   }
 
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() datos: Partial<Omit<Foto, 'id'>>,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() datos: Partial<Foto>) {
     return this.fotosService.update(id, datos);
   }
 
