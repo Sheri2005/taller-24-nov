@@ -7,6 +7,8 @@ export interface FiltroFotos {
   min: number;
   max: number;
   q?: string;
+  etiqueta?: string;
+  orden?: string;
   page: number;
   limit: number;
 }
@@ -18,14 +20,28 @@ export class FotosService {
     private readonly fotosRepo: Repository<Foto>,
   ) {}
 
-  async findAll({ min, max, q, page, limit }: FiltroFotos) {
+  async findAll({
+    min,
+    max,
+    q,
+    etiqueta,
+    orden,
+    page,
+    limit,
+  }: FiltroFotos) {
     const [data, total] = await this.fotosRepo.findAndCount({
       where: {
         calificacion: Between(min, max),
         ...(q && { titulo: ILike(`%${q}%`) }),
+        ...(etiqueta && { etiquetas: { texto: etiqueta } }),
       },
-      relations: { etiquetas: true },
-      order: { id: 'ASC' },
+      relations: { album: true, etiquetas: true },
+      order:
+        orden?.toLowerCase() === 'asc'
+          ? { calificacion: 'ASC' }
+          : orden?.toLowerCase() === 'desc'
+            ? { calificacion: 'DESC' }
+            : { id: 'ASC' },
       skip: (page - 1) * limit,
       take: limit,
     });
